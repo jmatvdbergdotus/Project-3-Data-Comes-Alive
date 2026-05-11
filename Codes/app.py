@@ -5,6 +5,7 @@ import pandas as pd
 import sqlite3
 import plotly.express as px
 
+
 # Database Path (Ensure this matches your folder structure)
 data_file = "Data/baggage_handling.db"
 
@@ -26,11 +27,18 @@ def get_data():
 df = get_data()
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
+CARD_STYLE = {
+    'backgroundColor': '#1e293b',
+    'padding': '20px',
+    'borderRadius': '20px',
+    'boxShadow': '0 4px 15px rgba(0,0,0,0.3)',
+    'marginBottom': '20px'
+}
 
 # --- PAGE 1: SYSTEM OVERVIEW ---
 def page_1_layout():
     return html.Div([
-        html.H2("System Overview", style={'color': '#00d4ff'}),
+        html.H2("System Overview", style={'color': '#7FFF00'}),
         html.Div([
             html.Label("Select Terminal:"),
             dcc.Dropdown(
@@ -42,7 +50,13 @@ def page_1_layout():
             ),
         ], style={'padding': '20px'}),
         html.Div([
-            html.Div([dcc.Graph(id='throughput-graph')], style={'width': '49%', 'display': 'inline-block'}),
+            html.Div([
+                dcc.Graph(id='throughput-graph')
+        ], style={
+            **CARD_STYLE,
+            'width': '49%',
+            'display': 'inline-block'
+        }),
             html.Div([dcc.Graph(id='location-risk-heatmap')], style={'width': '49%', 'float': 'right', 'display': 'inline-block'})
         ])
     ])
@@ -50,7 +64,7 @@ def page_1_layout():
 # --- PAGE 2: PROCESS ANALYTICS (NEW GRAPHS ADDED HERE) ---
 def page_2_layout():
     return html.Div([
-        html.H2("Process Performance & Delays", style={'color': '#2ecc71'}),
+        html.H2("Process Performance & Delays", style={'color': '#7FFF00'}),
         
         html.Div([
             # Graph 1: Delay Distribution
@@ -71,18 +85,39 @@ def page_2_layout():
     ])
 
 # --- MAIN LAYOUT ---
-app.layout = html.Div(style={'backgroundColor': '#008B8B', 'color': 'white', 'padding': '40px'}, children=[
+app.layout = html.Div(style={
+    'background': 'linear-gradient(135deg, #0f172a, #1e293b)',
+    'minHeight': '100vh',
+    'color': 'white',
+    'padding': '30px',
+    'fontFamily': 'Segoe UI'
+}, children=[
     dcc.Store(id='page-index', data=0),
+
+    dcc.Interval(
+    id='interval-component',
+    interval=1000,
+    n_intervals=0
+    ),
     html.H1("Airport Baggage Control Center", style={'textAlign': 'center', 'color': "#000000"}),
-    
+    html.Div([
+        html.H3(
+            "● LIVE SYSTEM",
+            style={'color': '#22c55e'}
+        ),
+
+        html.P(id='live-time')
+
+    ], style={
+        'textAlign': 'center'
+    }),
     html.Div(id='page-content'),
-    
+        
     html.Div([
         html.Button("← Back", id="back-btn", n_clicks=0, style={'marginRight': '10px'}),
         html.Button("Next →", id="next-btn", n_clicks=0, style={'backgroundColor': '#00d4ff'})
     ], style={'textAlign': 'center', 'marginTop': '30px'})
 ])
-
 # --- CALLBACK: NAVIGATION ---
 @app.callback(
     [Output('page-content', 'children'),
@@ -112,11 +147,38 @@ def update_page_1(selected_terminals):
     if not selected_terminals: return px.scatter(), px.scatter()
     filtered = df[df['terminal'].isin(selected_terminals)]
     
-    fig1 = px.area(filtered.groupby('hour')['BagID'].nunique().reset_index(), 
-                  x='hour', y='BagID', title="Bags Per Hour", template="plotly_dark")
+    fig1 = px.area(
+        filtered.groupby('hour')['BagID'].nunique().reset_index(),
+        x='hour',
+        y='BagID',
+        title="Bags Per Hour",
+        template="plotly_dark"
+    )
+
+    fig1.update_layout(
+        paper_bgcolor='#1e293b',
+        plot_bgcolor='#1e293b',
+        font_color='white',
+        title_font_size=22,
+        title_x=0.5
+    )
     
-    fig2 = px.density_heatmap(filtered.groupby(['terminal', 'zone'])['result'].apply(lambda x: (x==0).sum()).reset_index(),
-                             x='zone', y='terminal', z='result', title="Jams Heatmap", template="plotly_dark")
+    fig2 = px.density_heatmap(
+        filtered.groupby(['terminal', 'zone'])['result'].apply(lambda x: (x==0).sum()).reset_index(),
+        x='zone', 
+        y='terminal', 
+        z='result', 
+        title="Jams Heatmap", 
+        template="plotly_dark")
+    
+    fig1.update_layout(
+        paper_bgcolor='#1e293b',
+        plot_bgcolor='#1e293b',
+        font_color='white',
+        title_font_size=22,
+        title_x=0.5
+    )
+
     return fig1, fig2
 
 # --- CALLBACK: PAGE 2 GRAPHS (PROCESS DELAYS & SUCCESS RATES) ---
@@ -154,6 +216,17 @@ def update_page_2(index):
     )
     
     return fig_box, fig_bar, fig_priority_process
+
+from datetime import datetime
+
+@app.callback(
+    Output('live-time', 'children'),
+    Input('interval-component', 'n_intervals')
+)
+def update_time(n):
+    return datetime.now().strftime(
+        "System Time: %d-%m-%Y %H:%M:%S"
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
