@@ -342,7 +342,7 @@ def update_page_1(selected_terminals):
         title="Technical Errors Heatmap", 
         template="plotly_dark")
     
-    fig1.update_layout(
+    fig2.update_layout(
         paper_bgcolor='#1e293b',
         plot_bgcolor='#1e293b',
         font_color='white',
