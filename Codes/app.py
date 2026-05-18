@@ -443,7 +443,7 @@ def update_page_2(index):
         xaxis=dict(gridcolor='#334155'), 
         yaxis=dict(gridcolor='#334155')
     )
-    return fig_box, fig_bar, fig_priority_process
+    return fig_box, fig_bar, fig_priority_process, fig_sensor
 
 @app.callback(
     Output('live-time', 'children'),
