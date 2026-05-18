@@ -326,7 +326,7 @@ def update_page_1(selected_terminals):
     )
 
     fig1.update_layout(
-        yaxis_title="BagCount"
+        yaxis_title="BagCount",
         paper_bgcolor='#1e293b',
         plot_bgcolor='#1e293b',
         font_color='white',
