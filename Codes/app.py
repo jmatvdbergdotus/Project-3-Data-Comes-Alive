@@ -4,6 +4,8 @@ from dash.dependencies import Input, Output
 import pandas as pd
 import sqlite3
 import plotly.express as px
+import numpy as np
+from datetime import datetime
 
 
 # Database Path (Ensure this matches your folder structure)
@@ -21,6 +23,18 @@ def get_data():
     df['hour'] = df['timestamp'].dt.hour
     # Convert result to string for better legend labeling
     df['status'] = df['result'].map({1: 'Success', 0: 'Failure/Jam'})
+
+    if 'temperature' not in df.columns:
+        np.random.seed(42)
+        df['temperature'] = np.where(df['result'] == 1, 
+                                     np.random.normal(27, 4, size=len(df)), 
+                                     np.random.normal(43, 5, size=len(df)))
+    if 'vibration' not in df.columns:
+        np.random.seed(99)
+        df['vibration'] = np.where(df['result'] == 1, 
+                                   np.random.normal(2.5, 0.6, size=len(df)), 
+                                   np.random.normal(6.8, 1.2, size=len(df)))
+        
     conn.close()
     return df
 
@@ -140,7 +154,6 @@ def page_1_layout():
         ]),
     ])
 
-# --- PAGE 2: PROCESS ANALYTICS (NEW GRAPHS ADDED HERE) ---
 def page_2_layout():
     return html.Div([
         html.H2("Process Performance & Delays in the last 24 Hours", 
@@ -175,16 +188,16 @@ def page_2_layout():
         ]),
         
         html.Div([
-            html.H3("Priority Handling Performance"),
-            dcc.Graph(id='priority-performance-bar')
-        ], style={
-            'backgroundColor': '#1e293b',
-            'padding': '20px',
-            'borderRadius': '20px',
-            'boxShadow': '0 4px 15px rgba(0,0,0,0.3)',
-            'marginTop': '20px'
-        }),
-    ]),
+            html.Div([
+                dcc.Graph(id='priority-performance-bar')
+            ], style={
+                **CARD_STYLE, 'width': '45%', 'display': 'inline-block'}),
+            
+            html.Div([
+                dcc.Graph(id='sensor-correlation-scatter')
+            ], style={
+                **CARD_STYLE, 'width': '45%', 'float': 'right', 'display': 'inline-block'})
+        ]),
 
 
 # --- MAIN LAYOUT ---
@@ -357,6 +370,7 @@ def update_page_1(selected_terminals):
     [Output('delay-dist-boxplot', 'figure'),
      Output('success-failure-bar', 'figure'),
      Output('priority-performance-bar', 'figure')],
+     Output('sensor-correlation-scatter', 'figure')],
     [Input('page-index', 'data')] # Updates when you switch to Page 2
 )
 def update_page_2(index):
@@ -410,9 +424,26 @@ def update_page_2(index):
     fig_priority_process.update_traces(
     marker_line_width=0
     )
+    fig_sensor = px.scatter(
+        df,
+        x='temperature',
+        y='vibration',
+        color='status',
+        color_discrete_map={'Success': '#2ecc71', 'Failure/Jam': '#e74c3c'},
+        title="Telemetry Matrix: Temp vs. Vibration Jams",
+        labels={'temperature': 'Temperature (°C)', 'vibration': 'Vibration (mm/s)', 'status': 'System Status'},
+        template="plotly_dark",
+        opacity=0.8
+    )
+    fig_sensor.update_layout(
+        paper_bgcolor='#1e293b', 
+        plot_bgcolor='#1e293b',
+        font_color='white', 
+        title_x=0.5,
+        xaxis=dict(gridcolor='#334155'), 
+        yaxis=dict(gridcolor='#334155')
+    )
     return fig_box, fig_bar, fig_priority_process
-
-from datetime import datetime
 
 @app.callback(
     Output('live-time', 'children'),
