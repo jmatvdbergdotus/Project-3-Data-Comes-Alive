@@ -27,6 +27,8 @@ def get_data():
 df = get_data()
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
+server = app.server
+
 CARD_STYLE = {
     'backgroundColor': '#1e293b',
     'padding': '20px',
@@ -38,7 +40,22 @@ CARD_STYLE = {
 # --- PAGE 1: SYSTEM OVERVIEW ---
 def page_1_layout():
     return html.Div([
-        html.H2("System Overview", style={'color': '#7FFF00'}),
+        html.H2(
+            "System Overview in the last 24 Hours",
+
+            style={
+                'color': '#7FFF00',
+
+                'position': 'sticky',
+                'top': '110px',
+                'zIndex': '998',
+                'backgroundColor': 'rgba(15, 23, 42, 0.9)',
+                'backdropFilter': 'blur(8px)',
+                'padding': '15px',
+                'borderRadius': '10px',
+                'boxShadow': '0 2px 10px rgba(0,0,0,0.3)'
+            }
+        ),
         html.Div([
             html.Label("Select Terminal:"),
             dcc.Dropdown(
@@ -49,93 +66,246 @@ def page_1_layout():
                 style={'color': '#000000'}
             ),
         ], style={'padding': '20px'}),
+
+        html.Div([
+
+            html.Div([
+                html.H4("Total Bags"),
+                html.H2(f"{df['BagID'].nunique()}"),
+            ], style={
+                **CARD_STYLE,
+                'width': '20%',
+                'display': 'inline-block',
+                'textAlign': 'center',
+                'marginRight': '15px'
+            }),
+
+            html.Div([
+                html.H4("Failure Events"),
+                html.H2(f"{(df['result']==0).sum()}"),
+            ], style={
+                **CARD_STYLE,
+                'width': '20%',
+                'display': 'inline-block',
+                'textAlign': 'center',
+                'marginRight': '15px'
+            }),
+
+            html.Div([
+                html.H4("Success Rate"),
+                html.H2(
+                    f"{round((df['result']==1).mean()*100,2)}%"
+                ),
+            ], style={
+                **CARD_STYLE,
+                'width': '20%',
+                'display': 'inline-block',
+                'textAlign': 'center',
+                'marginRight': '15px'
+            }),
+
+            html.Div([
+                html.H4("Average Delay"),
+                html.H2(
+                    f"{round(df['delay'].mean(),2)} min"
+                ),
+            ], style={
+                **CARD_STYLE,
+                'width': '20%',
+                'display': 'inline-block',
+                'textAlign': 'center'
+            })
+
+        ], style={
+            'marginBottom': '30px'
+        }),
+
         html.Div([
             html.Div([
                 dcc.Graph(id='throughput-graph')
         ], style={
             **CARD_STYLE,
-            'width': '49%',
+            'width': '45%',
             'display': 'inline-block'
         }),
-            html.Div([dcc.Graph(id='location-risk-heatmap')], style={'width': '49%', 'float': 'right', 'display': 'inline-block'})
-        ])
+
+            html.Div([
+                dcc.Graph(id='location-risk-heatmap')
+            ], style={
+            **CARD_STYLE,
+            'width': '45%', 
+            'float': 'right', 
+            'display': 'inline-block'
+        })
+        ]),
     ])
 
 # --- PAGE 2: PROCESS ANALYTICS (NEW GRAPHS ADDED HERE) ---
 def page_2_layout():
     return html.Div([
-        html.H2("Process Performance & Delays", style={'color': '#7FFF00'}),
+        html.H2("Process Performance & Delays in the last 24 Hours", 
+                style={
+                'color': '#7FFF00',
+
+                'position': 'sticky',
+                'top': '110px',
+                'zIndex': '998',
+                'backgroundColor': 'rgba(15, 23, 42, 0.9)',
+                'backdropFilter': 'blur(8px)',
+                'padding': '15px',
+                'borderRadius': '10px',
+                'boxShadow': '0 2px 10px rgba(0,0,0,0.3)'
+            }
+        ),
         
         html.Div([
             # Graph 1: Delay Distribution
             html.Div([
                 dcc.Graph(id='delay-dist-boxplot')
-            ], style={'width': '49%', 'display': 'inline-block'}),
+            ], style={
+                **CARD_STYLE,
+                'width': '45%', 'display': 'inline-block'}),
             
             # Graph 2: Success vs Failure Rate
             html.Div([
                 dcc.Graph(id='success-failure-bar')
-            ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'})
+            ], style={
+                **CARD_STYLE,
+                'width': '45%', 'float': 'right', 'display': 'inline-block'})
         ]),
         
         html.Div([
             html.H3("Priority Handling Performance"),
-            dcc.Graph(id='priority-performance-bar') # Your new graph ID
-        ], style={'marginTop': '30px'})
-    ])
+            dcc.Graph(id='priority-performance-bar')
+        ], style={
+            'backgroundColor': '#1e293b',
+            'padding': '20px',
+            'borderRadius': '20px',
+            'boxShadow': '0 4px 15px rgba(0,0,0,0.3)',
+            'marginTop': '20px'
+        }),
+    ]),
+
 
 # --- MAIN LAYOUT ---
-app.layout = html.Div(style={
-    'background': 'linear-gradient(135deg, #0f172a, #1e293b)',
-    'minHeight': '100vh',
-    'color': 'white',
-    'padding': '30px',
-    'fontFamily': 'Segoe UI'
-}, children=[
-    dcc.Store(id='page-index', data=0),
+app.layout = html.Div(
+    
+    style={
+        'background': 'linear-gradient(135deg, #0f172a, #1e293b)',
+        'minHeight': '100vh',
+        'color': 'white',
+        'padding': '30px',
+        'fontFamily': 'Segoe UI'
+    }, 
+    
+    children=[
+        dcc.Store(id='page-index', data=0),
 
-    dcc.Interval(
-    id='interval-component',
-    interval=1000,
-    n_intervals=0
-    ),
-    html.H1("Airport Baggage Control Center", style={'textAlign': 'center', 'color': "#000000"}),
-    html.Div([
-        html.H3(
-            "● LIVE SYSTEM",
-            style={'color': '#22c55e'}
+        dcc.Interval(
+            id='interval-component',
+            interval=1000,
+            n_intervals=0
+        ),
+        html.Div([
+            html.H1(
+                "Airport Baggage Control Dashboard",
+                style={
+                    'textAlign': 'center',
+                    'color': "#87CEFA",
+                    'marginTop': '0px',
+                    'marginBottom': '5px'
+                }
+            ),
+
+            html.Div([
+
+                html.H3(
+                    "● LIVE SYSTEM",
+                    style={
+                        'color': '#22c55e',
+                        'margin': '0'
+                    }
+                ),
+
+                html.P(
+                    id='live-time',
+                    style={'margin': '0'}
+                )
+
+            ], style={
+                'textAlign': 'center'
+            })
+
+        ], style={
+
+            'position': 'sticky',
+            'top': '0',
+            'zIndex': '999',
+
+            'backgroundColor': '#0f172a',
+
+            'padding': '15px',
+
+            'borderBottom': '2px solid #38bdf8',
+
+            'boxShadow': '0 4px 10px rgba(0,0,0,0.4)'
+        }),
+
+        html.Div(
+            id='page-content',
+            style={'marginTop': '20px'}
         ),
 
-        html.P(id='live-time')
+        html.Div([
+            html.Button(
+                "← Back",
+             id="back-btn",
+                n_clicks=0,
+                style={'marginRight': '10px'}
+            ),
 
-    ], style={
-        'textAlign': 'center'
-    }),
-    html.Div(id='page-content'),
-        
-    html.Div([
-        html.Button("← Back", id="back-btn", n_clicks=0, style={'marginRight': '10px'}),
-        html.Button("Next →", id="next-btn", n_clicks=0, style={'backgroundColor': '#00d4ff'})
-    ], style={'textAlign': 'center', 'marginTop': '30px'})
-])
+            html.Button(
+                "Next →",
+                id="next-btn",
+                n_clicks=0,
+                style={'backgroundColor': '#00d4ff'}
+            )
+
+        ], style={
+            'textAlign': 'center',
+            'marginTop': '30px'
+        })
+    ]
+)
 # --- CALLBACK: NAVIGATION ---
 @app.callback(
     [Output('page-content', 'children'),
-     Output('page-index', 'data')],
+     Output('page-index', 'data'),
+     Output('next-btn', 'style'),
+     Output('back-btn', 'style')],
     [Input('next-btn', 'n_clicks'),
      Input('back-btn', 'n_clicks')],
     [State('page-index', 'data')]
 )
-def navigate(n, b, current_index):
+def navigate(n_next, n_back, current_index):
     ctx = dash.callback_context
-    if ctx.triggered and ctx.triggered[0]['prop_id'].split('.')[0] == 'next-btn':
-        current_index = min(current_index + 1, 1)
-    elif ctx.triggered and ctx.triggered[0]['prop_id'].split('.')[0] == 'back-btn':
-        current_index = max(current_index - 1, 0)
+    if ctx.triggered:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if button_id == 'next-btn':
+            current_index = min(current_index + 1, 1)
+        elif button_id == 'back-btn':
+            current_index = max(current_index - 1, 0)
     
-    if current_index == 0:
-        return page_1_layout(), current_index
-    return page_2_layout(), current_index
+    # Define styles based on current page index
+    next_style = {'backgroundColor': '#00d4ff', 'display': 'inline-block'}
+    back_style = {'marginRight': '10px', 'display': 'inline-block'}
+    
+    if current_index == 1:
+        next_style['display'] = 'none'  # Remove Next button on Page 2
+        return page_2_layout(), current_index, next_style, back_style
+    else:
+        back_style['display'] = 'none'  # Remove Back button on Page 1
+        return page_1_layout(), current_index, next_style, back_style
 
 # --- CALLBACK: PAGE 1 GRAPHS ---
 @app.callback(
@@ -168,7 +338,7 @@ def update_page_1(selected_terminals):
         x='zone', 
         y='terminal', 
         z='result', 
-        title="Jams Heatmap", 
+        title="Technical Errors Heatmap", 
         template="plotly_dark")
     
     fig1.update_layout(
@@ -199,12 +369,22 @@ def update_page_2(index):
     # 2. Success/Failure Bar Chart
     # Group by process and status to get counts
     sf_counts = df.groupby(['process', 'status']).size().reset_index(name='counts')
-    fig_bar = px.bar(sf_counts, x='process', y='counts', color='status',
-                     barmode='group', title="Success vs. Failure Count per Process",
-                     color_discrete_map={'Success': '#2ecc71', 'Failure/Jam': '#e74c3c'},
-                     template="plotly_dark")
+    fig_bar = px.bar(
+        sf_counts, 
+        x='process', 
+        y='counts', 
+        color='status',
+        barmode='group', 
+        title="Success vs. Failure Count per Process",
+        color_discrete_map={'Success': '#2ecc71', 'Failure/Jam': '#e74c3c'},
+        template="plotly_dark"
+    )
     
     process_priority_avg = df.groupby(['process', 'Priority'])['delay'].mean().reset_index()
+    process_priority_avg['Priority'] = process_priority_avg['Priority'].map({
+    1: 'Priority Bags',
+    0: 'Normal Bags'
+    })
     fig_priority_process = px.bar(
         process_priority_avg, 
         x='process', 
@@ -212,9 +392,23 @@ def update_page_2(index):
         color='Priority',  # Using the exact casing
         barmode='group',   # Puts bars side-by-side
         title="Average Delay by Process & Priority",
+
+        color_discrete_map={
+        'Priority Bags': '#F08080',
+        'Normal Bags': '#00FFFF'
+        },
+
         template="plotly_dark"
     )
-    
+    fig_priority_process.update_layout(
+    paper_bgcolor='#1e293b',
+    plot_bgcolor='#1e293b',
+    font_color='white',
+    title_x=0.5
+    )
+    fig_priority_process.update_traces(
+    marker_line_width=0
+    )
     return fig_box, fig_bar, fig_priority_process
 
 from datetime import datetime
@@ -229,4 +423,4 @@ def update_time(n):
     )
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8050)
