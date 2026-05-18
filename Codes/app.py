@@ -369,7 +369,7 @@ def update_page_1(selected_terminals):
 @app.callback(
     [Output('delay-dist-boxplot', 'figure'),
      Output('success-failure-bar', 'figure'),
-     Output('priority-performance-bar', 'figure')],
+     Output('priority-performance-bar', 'figure'),
      Output('sensor-correlation-scatter', 'figure')],
     [Input('page-index', 'data')] # Updates when you switch to Page 2
 )
