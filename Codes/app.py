@@ -198,7 +198,7 @@ def page_2_layout():
             ], style={
                 **CARD_STYLE, 'width': '45%', 'float': 'right', 'display': 'inline-block'})
         ]),
-
+    ])
 
 # --- MAIN LAYOUT ---
 app.layout = html.Div(
