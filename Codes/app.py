@@ -430,7 +430,7 @@ def update_page_2(index):
         y='vibration',
         color='status',
         color_discrete_map={'Success': '#2ecc71', 'Failure/Jam': '#e74c3c'},
-        title="Telemetry Matrix: Temp vs. Vibration Jams",
+        title="Telemetry Matrix: Temp and Vibration vs. Jams",
         labels={'temperature': 'Temperature (°C)', 'vibration': 'Vibration (mm/s)', 'status': 'System Status'},
         template="plotly_dark",
         opacity=0.8
